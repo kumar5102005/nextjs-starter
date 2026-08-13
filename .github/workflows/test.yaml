@@ -16,7 +16,7 @@ jobs:
             - name: install dependencies
               run: npm ci
             - name: format check
-              run: npm run format
+              run: npm run format:fix
             - name: linting check
               run: npm run lint
             - name: checking type errors

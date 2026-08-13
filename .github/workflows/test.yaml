@@ -44,6 +44,8 @@ jobs:
                 token: ${{ secrets.CODECOV_TOKEN }}
             - name: e2e test
               run: npm run test:e2e
+              env:
+                FLAGSMITH_ENVIRONMENT_KEY: ${{ secrets.FLAGSMITH_ENVIRONMENT_KEY }}
             - name: uploading the playwright file
               if: always()
               uses: actions/upload-artifact@v4

@@ -19,7 +19,7 @@ describe("Home", () => {
 
     const docH = screen.getByRole("heading", {
       name: "Hello World",
-      level: 2
+      level: 3
     });
 
     expect(docH).toBeInTheDocument();

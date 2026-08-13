@@ -51,6 +51,7 @@ jobs:
             
             - name: Send Slack notification
               uses: slackapi/slack-github-action@v4
+              if: failure()
               with:
                 webhook: ${{ secrets.SLACK_WEBHOOK }}
                 webhook-type: incoming-webhook

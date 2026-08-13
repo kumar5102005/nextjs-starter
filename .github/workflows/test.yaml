@@ -66,5 +66,6 @@ jobs:
                     }
               env:
                 SLACK_WEBHOOK: ${{ env.SLACK_WEBHOOK }}
+                SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
             
                 

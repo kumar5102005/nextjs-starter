@@ -49,10 +49,21 @@ jobs:
                 name: playwright-report
                 path: playwright-report/
             - name: The Slack GitHub Action
-              if: failure()
               uses: slackapi/slack-github-action@v4
+              if: failure()
               with:
-                payload: "./.github/slack/payload-failure.json"
+                payload: |
+                    {
+                    "blocks": [
+                        {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "🛑 *<https://github.com/${{github.repository}}/actions/runs/${{ github.run_id }}|${{ github.workflow }} workflow run>* failed."
+                        }
+                        }
+                    ]
+                    }
               env:
                 SLACK_WEBHOOK: ${{ env.SLACK_WEBHOOK }}
             

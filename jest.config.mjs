@@ -12,6 +12,7 @@ const config = {
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
 
   testEnvironment: "jest-environment-jsdom",
+  // transformIgnorePatterns:["/node_modules/(?!jsonpath-plus|@)"],
   modulePathIgnorePatterns: ["<rootDir>/e2e/"],
 };
 

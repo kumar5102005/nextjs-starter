@@ -16,7 +16,7 @@ jobs:
             - name: install dependencies
               run: npm ci
             - name: format check
-              run: npm run format
+              run: npm run format:fix
             - name: linting check
               run: npm run lint
             - name: checking type errors
@@ -64,8 +64,8 @@ jobs:
                         }
                     ]
                     }
-              env:
-                SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK }}
+                env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
                 SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
             
                 

@@ -48,24 +48,23 @@ jobs:
               with: 
                 name: playwright-report
                 path: playwright-report/
-            - name: The Slack GitHub Action
+            
+            - name: Send Slack notification
               uses: slackapi/slack-github-action@v4
-              if: failure()
               with:
+                webhook: ${{ secrets.SLACK_WEBHOOK }}
+                webhook-type: incoming-webhook
                 payload: |
                     {
-                    "blocks": [
+                        "blocks": [
                         {
-                        "type": "section",
-                        "text": {
+                            "type": "section",
+                            "text": {
                             "type": "mrkdwn",
-                            "text": "🛑 *<https://github.com/${{github.repository}}/actions/runs/${{ github.run_id }}|${{ github.workflow }} workflow run>* failed."
+                            "text": "🛑 *<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|CI workflow run>* failed."
+                            }
                         }
-                        }
-                    ]
+                        ]
                     }
-                env:
-                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-                SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
             
                 

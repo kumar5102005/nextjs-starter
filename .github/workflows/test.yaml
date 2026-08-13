@@ -16,11 +16,11 @@ jobs:
             - name: install dependencies
               run: npm ci
             - name: format check
-              run: npm format
+              run: npm run format
             - name: linting check
-              run: npm lint
+              run: npm run lint
             - name: checking type errors
-              run: npm typecheck 
+              run: npm run typecheck 
             - name: building the next
               run: npm run build
             - name: uploading the next folder to artifact

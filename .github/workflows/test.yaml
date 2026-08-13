@@ -23,6 +23,8 @@ jobs:
               run: npm run typecheck 
             - name: building the next
               run: npm run build
+              env:
+                FLAGSMITH_ENVIRONMENT_KEY: ${{ secrets.FLAGSMITH_ENVIRONMENT_KEY }}
             - name: uploading the next folder to artifact
               uses: actions/upload-artifact@v4
               with:

@@ -1,0 +1,111 @@
+name: deploy
+on:
+  workflow_dispatch: 
+    inputs:
+      aws-env:
+        description: "aws elastic beanstalk environment"
+        required: true
+        type: string
+        default: "nextjs-starter2-staging"
+      github-env:
+        description: "Github environment"
+        required: true
+        default: "staging"
+        type: string
+  workflow_call:
+    inputs: 
+      aws-env:
+        description: "aws elastic beanstalk environment"
+        required: true
+        type: string
+        default: "nextjs-starter2-staging"
+      github-env:
+        description: "Github environment"
+        required: true
+        default: "staging"
+        type: string
+
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.ref }}-${{inputs.aws-env}}-${{inputs.github-env}}
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ inputs.github-env }}
+      url: "htpp://${{ steps.aws-env-cname.outputs.aws-env-cname }}"
+
+    steps:
+      - name: Avoid deployment to production using a non production env
+        if: inputs.aws-env == vars.AWS_EB_PRODUCTION_ENV && inputs.github-env != 'production'
+        run: |
+          echo "::error::Cannot deploy to production using a non production env"
+          exit 1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with: 
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: check out
+        uses: actions/checkout@v4
+      - name: setup nodejs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      - name: install dependencies
+        run: npm ci
+      - name: build app
+        run: npm run build
+        env:
+          FLAGSMITH_ENVIRONMENT_KEY: ${{ secrets.FLAGSMITH_ENVIRONMENT_KEY }}
+      - name: cache ebcli
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          name: ${{ runner.os }}-pip
+      - name: install ebcli
+        id: install-ebcli
+        run: pip install awsebcli
+      - name: getting env name
+        id: aws-env-name
+        run: echo "aws-env-name=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names ${{ inputs.aws-env }} --query Environments[0].EnvironmentName --output text)" >> $GITHUB_OUTPUT
+      - name: getting env status
+        id: aws-env-status
+        run: echo "aws-env-status=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names ${{ inputs.aws-env }} --query Environments[0].Status --output text)" >> $GITHUB_OUTPUT
+      - name: Initialize eb
+        run: eb init ${{ vars.AWS_EB_APP_NAME }} --platform ${{ vars.AWS_EB_PLATFORM }} --region ${{ vars.AWS_REGION }}
+      - name: Create a new Environment
+        if: steps.aws-env-name.outputs.aws-env-name == 'None' || steps.aws-env-status.outputs.aws-env-status == 'Terminated'
+        run: eb create ${{ inputs.aws-env }} --cname ${{ inputs.aws-env }} --envvars FLAGSMITH_ENVIRONMENT_KEY=${{ secrets.FLAGSMITH_ENVIRONMENT_KEY }}
+      - name: deploy if env exist
+        if: steps.aws-env-name.outputs.aws-env-name == inputs.aws-env || steps.aws-env-status.outputs.aws-env-status != 'Terminated'
+        run: eb deploy ${{ inputs.aws-env }}
+      - name: getting env CNAME
+        id: aws-env-cname
+        run: echo "aws-env-status=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names ${{ inputs.aws-env }} --query Environments[0].CNAME --output text)" >> $GITHUB_OUTPUT
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v4
+        continue-on-error: true
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+                {
+                    "blocks": [
+                    {
+                        "type": "section",
+                        "text": {
+                        "type": "mrkdwn",
+                        "text": "Deployment to AWS env *${{ inputs.aws-env }}* using *${{ inputs.github-env }}* Github Environment was successfull. <http://${{ steps.aws-env-cname.outputs.aws-env-cname }}|View Deployment>"
+                        }
+                    }
+                    ]
+                }
+      - name: Abort if cancelled
+        if: cancelled() && steps.install-ebcli.conclusion == 'success'
+        run: eb abort ${{ inputs.aws-env }}
+          
+
+

@@ -80,7 +80,7 @@ jobs:
         if: steps.aws-env-name.outputs.aws-env-name == 'None' || steps.aws-env-status.outputs.aws-env-status == 'Terminated'
         run: eb create ${{ inputs.aws-env }} --cname ${{ inputs.aws-env }} --envvars FLAGSMITH_ENVIRONMENT_KEY=${{ secrets.FLAGSMITH_ENVIRONMENT_KEY }}
       - name: deploy if env exist
-        if: steps.aws-env-name.outputs.aws-env-name == inputs.aws-env || steps.aws-env-status.outputs.aws-env-status != 'Terminated'
+        if: steps.aws-env-name.outputs.aws-env-name == inputs.aws-env && steps.aws-env-status.outputs.aws-env-status != 'Terminated'
         run: eb deploy ${{ inputs.aws-env }}
       - name: getting env CNAME
         id: aws-env-cname

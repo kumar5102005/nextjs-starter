@@ -64,7 +64,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          name: ${{ runner.os }}-pip
+          key: ${{ runner.os }}-pip
       - name: install ebcli
         id: install-ebcli
         run: pip install awsebcli
@@ -75,7 +75,7 @@ jobs:
         id: aws-env-status
         run: echo "aws-env-status=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names ${{ inputs.aws-env }} --query Environments[0].Status --output text)" >> $GITHUB_OUTPUT
       - name: Initialize eb
-        run: eb init ${{ vars.AWS_EB_APP_NAME }} --platform ${{ vars.AWS_EB_PLATFORM }} --region ${{ vars.AWS_REGION }}
+        run: eb init ${{ vars.AWS_EB_APP_NAME }} --platform "${{ vars.AWS_EB_PLATFORM }}" --region ${{ vars.AWS_REGION }}
       - name: Create a new Environment
         if: steps.aws-env-name.outputs.aws-env-name == 'None' || steps.aws-env-status.outputs.aws-env-status == 'Terminated'
         run: eb create ${{ inputs.aws-env }} --cname ${{ inputs.aws-env }} --envvars FLAGSMITH_ENVIRONMENT_KEY=${{ secrets.FLAGSMITH_ENVIRONMENT_KEY }}

@@ -2,6 +2,9 @@
   "name": "next-1",
   "version": "0.1.0",
   "private": true,
+  "overrides": {
+    "human-id": "4.1.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -26,6 +29,7 @@
     "typescript": "5.1.6"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.1",
     "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^14.0.0",

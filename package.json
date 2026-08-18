@@ -1,6 +1,6 @@
 {
   "name": "next-1",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "overrides": {
     "human-id": "4.1.0"

@@ -12,7 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          # 1. Pass token here so git remote is authenticated with your token
+          token: ${{ secrets.CHANGESETS_TOKEN }}
+          fetch-depth: 0
       - name: Setup Node Environment
         uses: actions/setup-node@v3
         with:
@@ -24,10 +28,13 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-            publish: npx changeset tag
-            github-token: ${{ secrets.CHANGESETS_TOKEN }}
-            setupGitUser: true
-            createGithubReleases: true
+          publish: npx changeset tag
+          # 2. Pass token here so the changeset action can open PRs / create Releases
+          title: "Version Packages"
+          setupGitUser: true
+          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.CHANGESETS_TOKEN }}
       - run: echo '${{ toJson(steps.changesets.outputs)}}'
       - name: Send a Slack Message for Version PR Updates
         if: steps.changesets.outputs.pullRequestNumber

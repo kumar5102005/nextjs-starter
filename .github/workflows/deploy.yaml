@@ -12,6 +12,9 @@ on:
         required: true
         default: "staging"
         type: string
+      report-pr:
+        description: pr number of the pull request
+        type: number
   workflow_call:
     inputs: 
       aws-env:
@@ -31,6 +34,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions: 
+      pull-requests: write
     environment: 
       name: ${{ inputs.github-env }}
       url: "htpp://${{ steps.aws-env-cname.outputs.aws-env-cname }}"
@@ -47,6 +52,23 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
+      - name: Update Pull Request (Start)
+        uses: actions/github-script@v6
+        if: inputs.report-pr
+        continue-on-error: true
+        with:
+          script: |
+            const comment = `### ⏳ Deployment in progress...
+
+            [You can monitor the progress here.](https://github.com/${{github.repository}}/actions/runs/${{ github.run_id }})
+            `;
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ inputs.report-pr }},
+              body: comment
+            })
       - name: check out
         uses: actions/checkout@v4
       - name: setup nodejs
@@ -78,13 +100,13 @@ jobs:
         run: eb init ${{ vars.AWS_EB_APP_NAME }} --platform "${{ vars.AWS_EB_PLATFORM }}" --region ${{ vars.AWS_REGION }}
       - name: Create a new Environment
         if: steps.aws-env-name.outputs.aws-env-name == 'None' || steps.aws-env-status.outputs.aws-env-status == 'Terminated'
-        run: eb create ${{ inputs.aws-env }} --cname ${{ inputs.aws-env }} --envvars FLAGSMITH_ENVIRONMENT_KEY=${{ secrets.FLAGSMITH_ENVIRONMENT_KEY }}
+        run: eb create ${{ inputs.aws-env }} --instance_type ${{ vars.AWS_EB_ENV_INSTANCE_TYPES }} --service-role ${{ vars.AWS_EB_SERVICE_ROLE }} --cname ${{ inputs.aws-env }} --envvars FLAGSMITH_ENVIRONMENT_KEY=${{ secrets.FLAGSMITH_ENVIRONMENT_KEY }}
       - name: deploy if env exist
         if: steps.aws-env-name.outputs.aws-env-name == inputs.aws-env && steps.aws-env-status.outputs.aws-env-status != 'Terminated'
         run: eb deploy ${{ inputs.aws-env }}
       - name: getting env CNAME
         id: aws-env-cname
-        run: echo "aws-env-status=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names ${{ inputs.aws-env }} --query Environments[0].CNAME --output text)" >> $GITHUB_OUTPUT
+        run: echo "aws-env-cname=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names ${{ inputs.aws-env }} --query Environments[0].CNAME --output text)" >> $GITHUB_OUTPUT
       - name: Send Slack notification
         uses: slackapi/slack-github-action@v4
         continue-on-error: true
@@ -103,6 +125,38 @@ jobs:
                     }
                     ]
                 }
+      - name: Update Pull Request (Success)
+        uses: actions/github-script@v6
+        if: success() && inputs.report-pr
+        continue-on-error: true
+        with:
+          script: |
+            const comment = `### 🚀 Deployment Completed.
+
+            You can view the deployed environment here: http://${{ steps.aws-env-cname.outputs.aws-env-cname }}`
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ inputs.report-pr }},
+              body: comment
+            })
+      - name: Update Pull Request (Failure)
+        uses: actions/github-script@v6
+        if: failure() && inputs.report-pr
+        continue-on-error: true
+        with:
+          script: |
+            const comment = `### 🛑 Deployment Failed.
+
+            [View Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ inputs.report-pr }},
+              body: comment
+            })
       - name: Abort if cancelled
         if: cancelled() && steps.install-ebcli.conclusion == 'success'
         run: eb abort ${{ inputs.aws-env }}

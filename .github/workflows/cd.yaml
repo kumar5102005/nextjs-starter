@@ -88,12 +88,14 @@ jobs:
   deploy-to-staging:
     needs: run-tests
     uses: ./.github/workflows/deploy.yaml
+    secrets: inherit
     with:
       aws-env: ${{ vars.AWS_EB_STAGING_ENV }}
       github-env: "staging"
   deploy-to-production:
     needs: run-tests
     uses: ./.github/workflows/deploy.yaml
+    secrets: inherit
     with:
       aws-env: ${{ vars.AWS_EB_PRODUCTION_ENV }}
       github-env: "production"

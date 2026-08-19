@@ -7,7 +7,9 @@ jobs:
   add-deployment-info-comment:
     runs-on: ubuntu-latest
     permissions: 
-      actions: write
+      pull-requests: write
+      issues: write
+      contents: read
     steps:
       - name: add deployment info comment
         uses: actions/github-script@v6

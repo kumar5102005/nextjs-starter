@@ -14,6 +14,7 @@ jobs:
       - name: add deployment info comment
         uses: actions/github-script@v6
         with: 
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const issueNumber = context.payload.pull_request?.number || context.issue.number;
 

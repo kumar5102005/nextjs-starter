@@ -6,12 +6,15 @@ on:
 jobs: 
   add-deployment-info-comment:
     runs-on: ubuntu-latest
-    permissions: 
-      actions: write
+    # permissions: 
+    #   pull-requests: write
+    #   issues: write
+    #   contents: read
     steps:
       - name: add deployment info comment
         uses: actions/github-script@v6
         with: 
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const issueNumber = context.payload.pull_request?.number || context.issue.number;
 

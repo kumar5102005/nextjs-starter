@@ -23,3 +23,5 @@ jobs:
             })
             console.log(response);
             return response.data.head.ref
+      - run: echo '${{ github.event }}'
+      # - run: echo '${{  }}'

@@ -83,22 +83,7 @@ jobs:
         run: |
           eb init ${{ vars.AWS_EB_APP_NAME }} --platform "${{ vars.AWS_EB_PLATFORM }}" --region ${{ vars.AWS_REGION }} 
           eb terminate ${{ steps.aws-env-name.outputs.aws-env-name }} --force
-      - name: Update Pull Request (Failure)
-        uses: actions/github-script@v6
-        if: failure()
-        continue-on-error: true
-        with:
-          script: |
-            const comment = `### 🛑 Destroy Failed.
-
-            [View Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`
-
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ steps.issuse-number.outputs.issue-number }},
-              body: comment
-            })
+      
 
       - name: Update Pull Request (Success)
         uses: actions/github-script@v6
@@ -157,6 +142,22 @@ jobs:
               repo: context.repo.repo,
               deployment_id: parseInt(deployment_id)
             });
+      - name: Update Pull Request (Failure)
+        uses: actions/github-script@v6
+        if: failure()
+        continue-on-error: true
+        with:
+          script: |
+            const comment = `### 🛑 Destroy Failed.
+
+            [View Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issuse-number.outputs.issue-number }},
+              body: comment
+            })
       
 
 

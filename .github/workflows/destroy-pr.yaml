@@ -81,28 +81,7 @@ jobs:
         run: |
           echo "::error::the env is not exist or it is in terminated state"
           exit 1
-      - name: destroy the env
-        if: steps.aws-env-name.outputs.aws-env-name != 'None' && steps.aws-env-status.outputs.aws-env-status != 'Terminated'
-        id: destroy-env
-        run: |
-          eb init ${{ vars.AWS_EB_APP_NAME }} --platform "${{ vars.AWS_EB_PLATFORM }}" --region ${{ vars.AWS_REGION }} 
-          eb terminate ${{ steps.aws-env-name.outputs.aws-env-name }} --force
       
-
-      - name: Update Pull Request (Success)
-        uses: actions/github-script@v6
-        if: success()
-        continue-on-error: true
-        with:
-          script: |
-            const comment = `### 🚀 destroy Completed.`
-
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ steps.issuse-number.outputs.issue-number }},
-              body: comment
-            })
       - name: get deployment id
         id: deployment-id
         uses: actions/github-script@v6
@@ -127,7 +106,8 @@ jobs:
               console.log(`No deployments found for PR ref '${prRef}'`);
             }
       - name: delete the deployment in the github
-        if: steps.destroy-env.conclusion == 'success' && steps.deployment-id.outputs.deployment_id != ''
+        if: steps.deployment-id.outputs.deployment_id != ''
+        id: delete-deployment
         uses: actions/github-script@v6
         with:
           script: | 
@@ -146,6 +126,30 @@ jobs:
               repo: context.repo.repo,
               deployment_id: parseInt(deployment_id)
             });
+
+      - name: destroy the env
+        if: steps.delete-deployment.conclusion == 'success' && steps.aws-env-name.outputs.aws-env-name != 'None' && steps.aws-env-status.outputs.aws-env-status != 'Terminated'
+        id: destroy-env
+        run: |
+          eb init ${{ vars.AWS_EB_APP_NAME }} --platform "${{ vars.AWS_EB_PLATFORM }}" --region ${{ vars.AWS_REGION }} 
+          eb terminate ${{ steps.aws-env-name.outputs.aws-env-name }} --force
+      
+
+      - name: Update Pull Request (Success)
+        uses: actions/github-script@v6
+        if: success()
+        continue-on-error: true
+        with:
+          script: |
+            const comment = `### 🚀 destroy Completed.`
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issuse-number.outputs.issue-number }},
+              body: comment
+            })
+      
       - name: Update Pull Request (Failure)
         uses: actions/github-script@v6
         if: failure()

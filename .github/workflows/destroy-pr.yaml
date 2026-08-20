@@ -8,6 +8,18 @@ on:
 jobs:
   destroy-env:
     runs-on: ubuntu-latest
+    if: (github.event.issue.pull_request && github.event.comment.body == '/destroy') || github.event.action == 'closed'
     steps:
-      - run: echo '${{ toJson(github.event) }}'
-      - run: echo '${{ toJson(github.ref) }}'
+      - name: get the pull head ref
+        id: get-head-ref
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          script: |
+            const response = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number 
+            })
+            console.log(response);
+            return response.data.head.ref

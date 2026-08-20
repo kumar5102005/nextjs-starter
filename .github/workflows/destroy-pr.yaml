@@ -118,11 +118,12 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
+            const prRef = ${{ steps.get-head-ref.outputs.result }};
             // 2. Fetch deployments created specifically for this PR branch
             const { data: deployments } = await github.rest.repos.listDeployments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: "${{ steps.get-head-ref.outputs.result }}"
+              ref: prRef
             });
 
             // 3. Extract the deployment ID if available
@@ -133,7 +134,7 @@ jobs:
               // Set output so subsequent steps can use it
               core.setOutput('deployment_id', deploymentId);
             } else {
-              console.log(`No deployments found for PR ref '${steps.get-head-ref.outputs.result}'`);
+              console.log(`No deployments found for PR ref '${prRef}'`);
             }
       - name: delete the deployment in the github
         if: steps.destroy-env.conclusion == 'success' && steps.deployment-id.outputs.deployment_id != ''

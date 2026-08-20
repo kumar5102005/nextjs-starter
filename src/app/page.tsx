@@ -11,6 +11,7 @@ export default async function Home() {
         <h2>Hello World</h2>
       </div>
       <p>Env Staging, updated text</p>
+      <p> this is the paragraph after the destroy is completed </p>
       <Link href="/about">About</Link>
       <br />
       {flags.isFeatureEnabled("search") && <input placeholder="Search" />}

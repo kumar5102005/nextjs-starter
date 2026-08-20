@@ -76,11 +76,6 @@ jobs:
         run: |
           echo "${{ steps.aws-env-name.outputs.aws-env-name }}"
           echo "${{ steps.aws-env-status.outputs.aws-env-status }}"
-      - name: fail the wrokflow if env not exist
-        if: steps.aws-env-name.outputs.aws-env-name == 'None' || steps.aws-env-status.outputs.aws-env-status == 'Terminated'
-        run: |
-          echo "::error::the env is not exist or it is in terminated state"
-          exit 1
       
       - name: get deployment id
         id: deployment-id
@@ -126,6 +121,12 @@ jobs:
               repo: context.repo.repo,
               deployment_id: parseInt(deployment_id)
             });
+      
+      - name: fail the wrokflow if env not exist
+        if: steps.aws-env-name.outputs.aws-env-name == 'None' || steps.aws-env-status.outputs.aws-env-status == 'Terminated'
+        run: |
+          echo "::error::the env is not exist or it is in terminated state"
+          exit 1
 
       - name: destroy the env
         if: steps.delete-deployment.conclusion == 'success' && steps.aws-env-name.outputs.aws-env-name != 'None' && steps.aws-env-status.outputs.aws-env-status != 'Terminated'

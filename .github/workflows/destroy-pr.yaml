@@ -25,7 +25,7 @@ jobs:
             })
             console.log(response);
             return response.data.head.ref
-      - run: echo '${{ github.event }}'
+      - run: echo '${{ toJson(github.event) }}'
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with: 

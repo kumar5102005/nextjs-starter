@@ -6,9 +6,11 @@ on:
     types: closed
 
 jobs:
-  destroy-env:
+  getting-heaf-ref:
     runs-on: ubuntu-latest
     if: (github.event.issue.pull_request && github.event.comment.body == '/destroy') || github.event.action == 'closed'
+    outputs:
+      head-ref: ${{ steps.get-head-ref.outputs.result }}
     steps:
       - name: get the pull head ref
         id: get-head-ref
@@ -23,3 +25,33 @@ jobs:
             })
             console.log(response);
             return response.data.head.ref
+      - run: echo '${{ github.event }}'
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with: 
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: cache ebcli
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip
+      - name: install ebcli
+        id: install-ebcli
+        run: pip install awsebcli
+      - name: getting env name
+        id: aws-env-name
+        run: echo "aws-env-name=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names "nextjs-starter2-demo-pr-${{ github.event.pull_request.number }}" --query Environments[0].EnvironmentName --output text)" >> $GITHUB_OUTPUT
+      - name: getting env status
+        id: aws-env-status
+        run: echo "aws-env-status=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names "nextjs-starter2-demo-pr-${{ github.event.pull_request.number }}" --query Environments[0].Status --output text)" >> $GITHUB_OUTPUT
+      - name: echo of env name and status
+        run: |
+          echo "${{ steps.aws-env-name.outputs.aws-env-name }}"
+          echo "${{ steps.aws-env-status.outputs.aws-env-status }}"
+
+
+
+  
+  

@@ -40,17 +40,39 @@ jobs:
       - name: install ebcli
         id: install-ebcli
         run: pip install awsebcli
+      - name: getting issue number
+        id: issuse-number
+        run: echo "issue-number=${{ github.event.number && github.event.number || github.event.issue.number }}" >> $GITHUB_OUTPUT
       - name: getting env name
         id: aws-env-name
-        run: echo "aws-env-name=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names "nextjs-starter2-demo-pr-${{ github.event.issue.number }}" --query Environments[0].EnvironmentName --output text)" >> $GITHUB_OUTPUT
+        run: echo "aws-env-name=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names "nextjs-starter2-demo-pr-${{ steps.issuse-number.outputs.issue-number }}" --query Environments[0].EnvironmentName --output text)" >> $GITHUB_OUTPUT
       - name: getting env status
         id: aws-env-status
-        run: echo "aws-env-status=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names "nextjs-starter2-demo-pr-${{ github.event.issue.number }}" --query Environments[0].Status --output text)" >> $GITHUB_OUTPUT
+        run: echo "aws-env-status=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names "nextjs-starter2-demo-pr-${{ steps.issuse-number.outputs.issue-number }}" --query Environments[0].Status --output text)" >> $GITHUB_OUTPUT
       - name: echo of env name and status
         run: |
           echo "${{ steps.aws-env-name.outputs.aws-env-name }}"
           echo "${{ steps.aws-env-status.outputs.aws-env-status }}"
-
+      - name: fail the wrokflow if env not exist
+        if: steps.aws-env-name.outputs.aws-env-name == 'None' || steps.aws-env-status.outputs.aws-env-status == 'Terminated'
+        run: |
+          echo "::error::the env is not exist or it is in terminated state"
+          exit 1
+      - name: destroy the env
+        if: steps.aws-env-name.outputs.aws-env-name != 'None' || steps.aws-env-status.outputs.aws-env-status != 'Terminated'
+        id: destroy-env
+        run: eb destroy ${{ steps.aws-env-name.outputs.aws-env-name }}
+      - name: delete the deployment in the github
+        if: steps.destroy-env.conclusion == 'success'
+        uses: actions/github-script@v6
+        with:
+          script: | 
+            const response = await github.rest.repos.deleteDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: 
+            });
+      
 
 
   

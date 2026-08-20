@@ -1,0 +1,21 @@
+name: get list deployments
+on:
+  issue_comment:
+    types: created
+  pull_request_target: 
+    types: closed
+
+jobs:
+  get-deployments-list:
+    runs-on: ubuntu-latest
+    steps:
+      - name: get list
+        id: get-list
+        uses: actions/github-script@v6
+        with:
+          script: | 
+            const response = github.rest.repos.listDeployments({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            console.log(response)

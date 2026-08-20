@@ -77,6 +77,19 @@ jobs:
           echo "${{ steps.aws-env-name.outputs.aws-env-name }}"
           echo "${{ steps.aws-env-status.outputs.aws-env-status }}"
       
+      - name: fail the wrokflow if env not exist
+        if: steps.aws-env-name.outputs.aws-env-name == 'None' || steps.aws-env-status.outputs.aws-env-status == 'Terminated'
+        run: |
+          echo "::error::the env is not exist or it is in terminated state"
+          exit 1
+
+      - name: destroy the env
+        if: steps.aws-env-name.outputs.aws-env-name != 'None' && steps.aws-env-status.outputs.aws-env-status != 'Terminated'
+        id: destroy-env
+        run: |
+          eb init ${{ vars.AWS_EB_APP_NAME }} --platform "${{ vars.AWS_EB_PLATFORM }}" --region ${{ vars.AWS_REGION }} 
+          eb terminate ${{ steps.aws-env-name.outputs.aws-env-name }} --force
+      
       - name: get deployment id
         id: deployment-id
         uses: actions/github-script@v6
@@ -101,7 +114,7 @@ jobs:
               console.log(`No deployments found for PR ref '${prRef}'`);
             }
       - name: delete the deployment in the github
-        if: steps.deployment-id.outputs.deployment_id != ''
+        if: steps.destroy-env.conclusion == 'success' && steps.deployment-id.outputs.deployment_id != ''
         id: delete-deployment
         uses: actions/github-script@v6
         with:
@@ -122,18 +135,7 @@ jobs:
               deployment_id: parseInt(deployment_id)
             });
       
-      - name: fail the wrokflow if env not exist
-        if: steps.aws-env-name.outputs.aws-env-name == 'None' || steps.aws-env-status.outputs.aws-env-status == 'Terminated'
-        run: |
-          echo "::error::the env is not exist or it is in terminated state"
-          exit 1
-
-      - name: destroy the env
-        if: steps.delete-deployment.conclusion == 'success' && steps.aws-env-name.outputs.aws-env-name != 'None' && steps.aws-env-status.outputs.aws-env-status != 'Terminated'
-        id: destroy-env
-        run: |
-          eb init ${{ vars.AWS_EB_APP_NAME }} --platform "${{ vars.AWS_EB_PLATFORM }}" --region ${{ vars.AWS_REGION }} 
-          eb terminate ${{ steps.aws-env-name.outputs.aws-env-name }} --force
+      
       
 
       - name: Update Pull Request (Success)

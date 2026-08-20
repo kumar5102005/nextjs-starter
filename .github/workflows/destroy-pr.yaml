@@ -42,10 +42,10 @@ jobs:
         run: pip install awsebcli
       - name: getting env name
         id: aws-env-name
-        run: echo "aws-env-name=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names "nextjs-starter2-demo-pr-${{ github.event.pull_request.number }}" --query Environments[0].EnvironmentName --output text)" >> $GITHUB_OUTPUT
+        run: echo "aws-env-name=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names "nextjs-starter2-demo-pr-${{ github.event.issue.number }}" --query Environments[0].EnvironmentName --output text)" >> $GITHUB_OUTPUT
       - name: getting env status
         id: aws-env-status
-        run: echo "aws-env-status=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names "nextjs-starter2-demo-pr-${{ github.event.pull_request.number }}" --query Environments[0].Status --output text)" >> $GITHUB_OUTPUT
+        run: echo "aws-env-status=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names "nextjs-starter2-demo-pr-${{ github.event.issue.number }}" --query Environments[0].Status --output text)" >> $GITHUB_OUTPUT
       - name: echo of env name and status
         run: |
           echo "${{ steps.aws-env-name.outputs.aws-env-name }}"

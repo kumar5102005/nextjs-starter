@@ -80,7 +80,9 @@ jobs:
       - name: destroy the env
         if: steps.aws-env-name.outputs.aws-env-name != 'None' || steps.aws-env-status.outputs.aws-env-status != 'Terminated'
         id: destroy-env
-        run: eb terminate ${{ steps.aws-env-name.outputs.aws-env-name }} --force
+        run: |
+          eb init ${{ vars.AWS_EB_APP_NAME }} --platform "${{ vars.AWS_EB_PLATFORM }}" --region ${{ vars.AWS_REGION }} 
+          eb terminate ${{ steps.aws-env-name.outputs.aws-env-name }} --force
       - name: Update Pull Request (Success)
         uses: actions/github-script@v6
         if: success()
